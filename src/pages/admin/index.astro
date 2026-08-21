@@ -1,0 +1,30 @@
+---
+import '../../styles/globals.css';
+import { PRODUCER_NAME } from '../../lib/site';
+import { csrfCookie, generateCsrfToken } from '../../lib/admin/csrf';
+
+const csrfToken = generateCsrfToken();
+Astro.response.headers.append('Set-Cookie', csrfCookie(csrfToken));
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Admin — {PRODUCER_NAME}</title>
+  </head>
+  <body>
+    <main class="mx-auto max-w-sm px-gutter py-16">
+      <h1>Admin</h1>
+      <p class="mt-4 text-ink-dim">
+        You're logged in. Nothing to manage yet — this is the reachable end
+        of the auth path, not a product dashboard.
+      </p>
+
+      <form method="POST" action="/api/admin/logout" class="mt-8">
+        <input type="hidden" name="csrf_token" value={csrfToken} />
+        <button type="submit" class="key">Log out</button>
+      </form>
+    </main>
+  </body>
+</html>

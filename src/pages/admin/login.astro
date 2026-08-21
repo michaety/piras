@@ -1,0 +1,40 @@
+---
+import '../../styles/globals.css';
+import { PRODUCER_NAME } from '../../lib/site';
+import { csrfCookie, generateCsrfToken } from '../../lib/admin/csrf';
+
+const csrfToken = generateCsrfToken();
+Astro.response.headers.append('Set-Cookie', csrfCookie(csrfToken));
+
+const error = Astro.url.searchParams.get('error');
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Admin login — {PRODUCER_NAME}</title>
+  </head>
+  <body>
+    <main class="mx-auto max-w-sm px-gutter py-16">
+      <h1>Admin</h1>
+
+      {error && <p class="label mt-4 text-danger">Incorrect password.</p>}
+
+      <form method="POST" action="/api/admin/login" class="mt-6 flex flex-col gap-4">
+        <input type="hidden" name="csrf_token" value={csrfToken} />
+        <label class="flex flex-col gap-1">
+          <span class="label">Password</span>
+          <input
+            type="password"
+            name="password"
+            required
+            autocomplete="current-password"
+            class="border border-rule bg-inlay px-3 py-2"
+          />
+        </label>
+        <button type="submit" class="key self-start">Log in</button>
+      </form>
+    </main>
+  </body>
+</html>

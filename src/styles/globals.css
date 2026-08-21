@@ -1,0 +1,185 @@
+@import './tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Fonts are self-hosted from /public/fonts — no Google Fonts request, no CDN
+   dependency, and no unlicensed Helvetica Neue. All three are SIL OFL.
+   Archivo + Archivo Narrow: fonts.google.com/specimen/Archivo
+   Fragment Mono:            fonts.google.com/specimen/Fragment+Mono
+   DSEG7 Classic:            github.com/keshikan/DSEG */
+@font-face {
+  font-family: 'Archivo';
+  src: url('/fonts/Archivo-Variable.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Fragment Mono';
+  src: url('/fonts/FragmentMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'DSEG7 Classic';
+  src: url('/fonts/DSEG7Classic-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    background: var(--faceplate);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: var(--t-sm);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Display type is condensed Archivo, uppercase, tight. */
+  h1, h2, h3 {
+    font-family: var(--font-cond);
+    font-stretch: 75%;
+    font-weight: 600;
+    letter-spacing: var(--track-tight);
+    text-transform: uppercase;
+    line-height: 1.05;
+  }
+
+  h1 { font-size: var(--t-2xl); font-weight: 700; }
+  h2 { font-size: var(--t-xl); }
+  h3 { font-size: var(--t-lg); }
+
+  /* Prose is the one place the mono relaxes into a readable measure. */
+  p { max-width: 68ch; }
+
+  a { color: inherit; text-decoration: none; }
+
+  /* Segment red earns its keep as the focus ring — high contrast against
+     warm grey, and it ties keyboard nav to the readout language. */
+  :focus-visible {
+    outline: 2px solid var(--segment);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--ink);
+    color: var(--faceplate);
+  }
+}
+
+@layer components {
+
+  /* ---- Engraved groove. The core structural primitive. ------------------
+     1px highlight on top, 1px shadow beneath. This is the single detail
+     that makes the surface read as metal rather than paper. ------------- */
+  .groove {
+    border-top: 1px solid var(--seam-light);
+    border-bottom: 1px solid var(--seam-dark);
+  }
+
+  /* ---- Engraved micro-label ------------------------------------------- */
+  .label {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+
+  /* ---- The LCD window: the signature element --------------------------- */
+  .lcd {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-3);
+    padding: var(--s-2) var(--s-3);
+    background: var(--glass);
+    border: 1px solid var(--glass-edge);
+    border-radius: var(--radius-glass);
+    box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.55);
+  }
+
+  .seg {
+    font-family: var(--font-segment);
+    font-weight: 700;
+    color: var(--segment);
+    line-height: 1;
+    text-shadow: 0 0 6px rgb(255 59 33 / 0.45);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .lcd .unit {
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: var(--track-label);
+    color: #6d6558;
+  }
+
+  /* ---- Physical button: raised, then pressed --------------------------- */
+  .key {
+    background: var(--inlay);
+    border: 1px solid var(--seam-dark);
+    border-top-color: var(--seam-light);
+    border-left-color: var(--seam-light);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: var(--t-xs);
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+    padding: var(--s-2) var(--s-4);
+    cursor: pointer;
+    transition: background var(--fast) var(--ease);
+  }
+  .key:hover  { background: var(--faceplate); }
+  .key:active {
+    background: var(--recess);
+    border-top-color: var(--seam-dark);
+    border-left-color: var(--seam-dark);
+    border-bottom-color: var(--seam-light);
+  }
+  .key:disabled {
+    color: var(--ink-faint);
+    cursor: not-allowed;
+    background: var(--recess);
+  }
+
+  /* ---- Rack row: one product, one rack unit ---------------------------- */
+  .rack-row {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr) 140px 116px 90px 96px;
+    align-items: center;
+    gap: var(--s-4);
+    padding: var(--s-4) var(--gutter);
+    border-top: 1px solid var(--seam-light);
+    border-bottom: 1px solid var(--seam-dark);
+    transition: background var(--fast) var(--ease);
+  }
+  .rack-row:hover { background: var(--inlay); }
+
+  /* otxhello's idiom, kept intact: the arrow slides in on hover. */
+  .rack-row .arrow {
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: opacity var(--fast) var(--ease), transform var(--fast) var(--ease);
+  }
+  .rack-row:hover .arrow,
+  .rack-row:focus-within .arrow {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  @media (max-width: 900px) {
+    .rack-row {
+      grid-template-columns: 36px minmax(0, 1fr) auto;
+      grid-template-areas: 'idx title lcd' 'idx meta price';
+      row-gap: var(--s-2);
+    }
+  }
+}

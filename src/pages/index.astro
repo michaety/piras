@@ -1,17 +1,36 @@
 ---
+import StoreHeader from '../components/StoreHeader';
+import RackRow from '../components/RackRow.astro';
+import '../styles/globals.css';
+import { PRODUCER_NAME, SITE_DESCRIPTION } from '../lib/site';
+import { getFeatured } from '../lib/fixtures/listings';
 
+const featured = getFeatured();
 ---
 
 <html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={SITE_DESCRIPTION} />
+    <title>{PRODUCER_NAME}</title>
+  </head>
+  <body>
+    <StoreHeader currentPath={Astro.url.pathname} />
+
+    <main>
+      <section class="px-gutter py-16">
+        <h1 class="max-w-2xl">{PRODUCER_NAME}</h1>
+        <p class="mt-4 label normal-case text-ink-dim">{SITE_DESCRIPTION}</p>
+        <a href="/shop" class="key mt-8 inline-block">Browse the shop</a>
+      </section>
+
+      {featured.length > 0 && (
+        <section>
+          <h2 class="label px-gutter py-2">Featured</h2>
+          {featured.map((listing, index) => <RackRow listing={listing} index={index} />)}
+        </section>
+      )}
+    </main>
+  </body>
 </html>

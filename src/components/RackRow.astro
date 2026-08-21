@@ -1,0 +1,46 @@
+---
+import type { Listing } from '../lib/fixtures/listings';
+import { formatMoney } from '../lib/payments';
+
+interface Props {
+  listing: Listing;
+  index: number;
+}
+
+const { listing, index } = Astro.props;
+
+const typeLabel: Record<Listing['type'], string> = {
+  beat: 'Beat',
+  stems: 'Stems',
+  sample: 'Sample',
+  pack: 'Pack',
+};
+---
+
+<a href={`/shop/listings/${listing.id}`} class="rack-row group" aria-label={listing.title}>
+  <span class="label [grid-area:idx]">{String(index + 1).padStart(2, '0')}</span>
+
+  <div class="min-w-0 [grid-area:title]">
+    <h3 class="truncate text-base">{listing.title}</h3>
+    <span class="label">{typeLabel[listing.type]} · {listing.formats}</span>
+  </div>
+
+  <span class="lcd [grid-area:lcd]">
+    {listing.bpm ? (
+      <>
+        <span class="seg">{listing.bpm}</span>
+        <span class="unit">BPM</span>
+      </>
+    ) : (
+      <span class="seg text-segment-off">&mdash;</span>
+    )}
+  </span>
+
+  <span class="label [grid-area:meta]">{listing.musical_key ?? '—'}</span>
+
+  <span class="lcd [grid-area:price]">
+    <span class="seg">{formatMoney(listing.price_cents, listing.currency)}</span>
+  </span>
+
+  <span class="arrow max-[900px]:hidden font-mono text-ink-dim group-hover:text-ink">&rarr;</span>
+</a>

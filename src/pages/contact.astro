@@ -1,0 +1,49 @@
+---
+import StoreHeader from '../components/StoreHeader';
+import '../styles/globals.css';
+import { PRODUCER_NAME, SOCIALS } from '../lib/site';
+
+const socials = SOCIALS.filter((s) => s.url);
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Contact — {PRODUCER_NAME}</title>
+  </head>
+  <body>
+    <StoreHeader currentPath={Astro.url.pathname} />
+
+    <main class="px-gutter py-12">
+      <h1>Contact</h1>
+
+      <form method="POST" action="/api/contact" class="mt-6 flex max-w-md flex-col gap-4">
+        <label class="flex flex-col gap-1">
+          <span class="label">Name</span>
+          <input type="text" name="name" required maxlength="200" class="border border-rule bg-inlay px-3 py-2" />
+        </label>
+
+        <label class="flex flex-col gap-1">
+          <span class="label">Email</span>
+          <input type="email" name="email" required maxlength="320" class="border border-rule bg-inlay px-3 py-2" />
+        </label>
+
+        <label class="flex flex-col gap-1">
+          <span class="label">Message</span>
+          <textarea name="message" required maxlength="4000" rows="6" class="border border-rule bg-inlay px-3 py-2"></textarea>
+        </label>
+
+        <button type="submit" class="key self-start">Send</button>
+      </form>
+
+      {socials.length > 0 && (
+        <div class="mt-10 flex gap-4">
+          {socials.map((s) => (
+            <a href={s.url} class="label" rel="noreferrer">{s.label}</a>
+          ))}
+        </div>
+      )}
+    </main>
+  </body>
+</html>

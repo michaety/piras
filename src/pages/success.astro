@@ -1,0 +1,27 @@
+---
+import StoreHeader from '../components/StoreHeader';
+import '../styles/globals.css';
+import { PRODUCER_NAME } from '../lib/site';
+
+const sessionId = Astro.url.searchParams.get('session');
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Order confirmed — {PRODUCER_NAME}</title>
+  </head>
+  <body>
+    <StoreHeader currentPath={Astro.url.pathname} />
+
+    <main class="px-gutter py-16">
+      <h1>Thanks.</h1>
+      <p class="mt-4 max-w-md text-ink-dim">
+        Payments aren't live yet, so this is a placeholder confirmation. Once
+        checkout is wired up, your download link will appear here.
+      </p>
+      {sessionId && <p class="label mt-6">Session: {sessionId}</p>}
+    </main>
+  </body>
+</html>

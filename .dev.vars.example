@@ -1,0 +1,5 @@
+## Copy to .dev.vars (never committed) and fill in real values for local dev.
+
+## PBKDF2 hash produced by hashPassword() in src/lib/admin/password.ts —
+## never the plaintext password itself.
+ADMIN_PASSWORD_HASH=

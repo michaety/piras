@@ -1,0 +1,24 @@
+---
+import StoreHeader from '../components/StoreHeader';
+import '../styles/globals.css';
+import { PRODUCER_NAME } from '../lib/site';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>About — {PRODUCER_NAME}</title>
+  </head>
+  <body>
+    <StoreHeader currentPath={Astro.url.pathname} />
+
+    <main class="px-gutter py-16">
+      <h1>About</h1>
+      <p class="mt-4 max-w-md text-ink-dim">
+        {PRODUCER_NAME} makes beats, stems, and sample packs, sold direct — no
+        marketplace, no accounts, no subscriptions.
+      </p>
+    </main>
+  </body>
+</html>

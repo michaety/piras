@@ -1,0 +1,49 @@
+---
+import StoreHeader from '../components/StoreHeader';
+import RackRow from '../components/RackRow.astro';
+import '../styles/globals.css';
+import { PRODUCER_NAME } from '../lib/site';
+import { listings, type ProductType } from '../lib/fixtures/listings';
+
+const FILTERS: Array<{ label: string; type: ProductType | null }> = [
+  { label: 'All', type: null },
+  { label: 'Beats', type: 'beat' },
+  { label: 'Stems', type: 'stems' },
+  { label: 'Samples', type: 'sample' },
+  { label: 'Packs', type: 'pack' },
+];
+
+const activeType = Astro.url.searchParams.get('type') as ProductType | null;
+const filtered = activeType ? listings.filter((l) => l.type === activeType) : listings;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Shop — {PRODUCER_NAME}</title>
+  </head>
+  <body>
+    <StoreHeader currentPath={Astro.url.pathname} />
+
+    <main>
+      <div class="groove flex flex-wrap gap-2 px-gutter py-4">
+        {FILTERS.map((filter) => (
+          <a
+            href={filter.type ? `/shop?type=${filter.type}` : '/shop'}
+            data-active={activeType === filter.type}
+            class={`key ${activeType === filter.type ? 'bg-recess' : ''}`}
+          >
+            {filter.label}
+          </a>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
+        <p class="label px-gutter py-8">No listings match this filter.</p>
+      ) : (
+        filtered.map((listing, index) => <RackRow listing={listing} index={index} />)
+      )}
+    </main>
+  </body>
+</html>
