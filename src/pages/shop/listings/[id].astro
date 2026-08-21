@@ -1,9 +1,12 @@
 ---
+import { env } from 'cloudflare:workers';
 import StoreHeader from '../../../components/StoreHeader';
 import '../../../styles/globals.css';
 import { PRODUCER_NAME } from '../../../lib/site';
 import { listings } from '../../../lib/fixtures/listings';
 import { formatMoney } from '../../../lib/payments';
+import { getCartCountFromRequest } from '../../../lib/cart/items';
+import { csrfCookie, generateCsrfToken } from '../../../lib/admin/csrf';
 
 const { id } = Astro.params as { id: string };
 const listing = listings.find((l) => l.id === id);
@@ -18,6 +21,10 @@ const typeLabel: Record<typeof listing.type, string> = {
   sample: 'Sample',
   pack: 'Pack',
 };
+
+const cartCount = await getCartCountFromRequest(env.DB, Astro.request);
+const csrfToken = generateCsrfToken();
+Astro.response.headers.append('Set-Cookie', csrfCookie(csrfToken));
 ---
 
 <html lang="en">
@@ -27,7 +34,7 @@ const typeLabel: Record<typeof listing.type, string> = {
     <title>{listing.title} — {PRODUCER_NAME}</title>
   </head>
   <body>
-    <StoreHeader currentPath={Astro.url.pathname} />
+    <StoreHeader currentPath={Astro.url.pathname} cartCount={cartCount} />
 
     <main class="px-gutter py-12">
       <div class="flex flex-col gap-8 sm:flex-row">
@@ -89,19 +96,12 @@ const typeLabel: Record<typeof listing.type, string> = {
             </table>
           )}
 
-          <form method="POST" action="/api/checkout" class="mt-10 flex max-w-sm flex-col gap-3">
-            <input type="hidden" name="listingId" value={listing.id} />
-            <label class="flex flex-col gap-1">
-              <span class="label">Email</span>
-              <input
-                type="email"
-                name="email"
-                required
-                maxlength="320"
-                class="border border-rule bg-inlay px-3 py-2"
-              />
-            </label>
-            <button type="submit" class="key self-start">Buy — {formatMoney(listing.price_cents, listing.currency)}</button>
+          <form method="POST" action="/api/cart/add" class="mt-10">
+            <input type="hidden" name="csrf_token" value={csrfToken} />
+            <input type="hidden" name="productId" value={listing.id} />
+            <button type="submit" class="key self-start">
+              Add to cart — {formatMoney(listing.price_cents, listing.currency)}
+            </button>
           </form>
         </div>
       </div>

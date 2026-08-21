@@ -1,5 +1,6 @@
 import { handle } from '@astrojs/cloudflare/handler';
 import { cleanupPendingUploads } from './lib/admin/cleanup';
+import { cleanupAbandonedCarts } from './lib/cart/cleanup';
 
 /**
  * Custom worker entry so a scheduled() handler can sit alongside Astro's
@@ -14,6 +15,11 @@ export default {
     ctx.waitUntil(
       cleanupPendingUploads(env).then((result) => {
         console.log(`cleanup: removed ${result.rowsDeleted} pending_uploads row(s), ${result.objectsDeleted} R2 object(s)`);
+      }),
+    );
+    ctx.waitUntil(
+      cleanupAbandonedCarts(env).then((result) => {
+        console.log(`cleanup: removed ${result.cartsDeleted} abandoned cart(s)`);
       }),
     );
   },

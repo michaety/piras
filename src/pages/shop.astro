@@ -1,9 +1,13 @@
 ---
+import { env } from 'cloudflare:workers';
 import StoreHeader from '../components/StoreHeader';
 import RackRow from '../components/RackRow.astro';
 import '../styles/globals.css';
 import { PRODUCER_NAME } from '../lib/site';
 import { listings, type ProductType } from '../lib/fixtures/listings';
+import { getCartCountFromRequest } from '../lib/cart/items';
+
+const cartCount = await getCartCountFromRequest(env.DB, Astro.request);
 
 const FILTERS: Array<{ label: string; type: ProductType | null }> = [
   { label: 'All', type: null },
@@ -24,7 +28,7 @@ const filtered = activeType ? listings.filter((l) => l.type === activeType) : li
     <title>Shop — {PRODUCER_NAME}</title>
   </head>
   <body>
-    <StoreHeader currentPath={Astro.url.pathname} />
+    <StoreHeader currentPath={Astro.url.pathname} cartCount={cartCount} />
 
     <main>
       <div class="groove flex flex-wrap gap-2 px-gutter py-4">

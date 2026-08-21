@@ -1,0 +1,88 @@
+---
+import { env } from 'cloudflare:workers';
+import StoreHeader from '../components/StoreHeader';
+import '../styles/globals.css';
+import { PRODUCER_NAME } from '../lib/site';
+import { formatMoney } from '../lib/payments';
+import { getCartId } from '../lib/cart/session';
+import { getCartItems } from '../lib/cart/items';
+import { csrfCookie, generateCsrfToken } from '../lib/admin/csrf';
+
+const cartId = getCartId(Astro.request);
+const items = cartId ? await getCartItems(env.DB, cartId) : [];
+const cartCount = items.length;
+
+const total = items.reduce((sum, item) => sum + item.price_cents, 0);
+const currency = items[0]?.currency ?? 'usd';
+
+const error = Astro.url.searchParams.get('error');
+
+const csrfToken = generateCsrfToken();
+Astro.response.headers.append('Set-Cookie', csrfCookie(csrfToken));
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Cart — {PRODUCER_NAME}</title>
+  </head>
+  <body>
+    <StoreHeader currentPath={Astro.url.pathname} cartCount={cartCount} />
+
+    <main class="px-gutter py-12">
+      <h1>Cart</h1>
+
+      {error && <p class="label mt-4 text-destructive">{error}</p>}
+
+      {items.length === 0 ? (
+        <p class="mt-6 text-ink-dim">
+          Your cart is empty. <a href="/shop" class="underline">Browse the shop</a>.
+        </p>
+      ) : (
+        <>
+          <table class="groove mt-6 w-full max-w-xl">
+            <tbody>
+              {items.map((item) => (
+                <tr class="groove">
+                  <td class="py-2">{item.title}</td>
+                  <td class="label py-2">{item.type}</td>
+                  <td class="py-2 text-right">{formatMoney(item.price_cents, item.currency)}</td>
+                  <td class="py-2 text-right">
+                    <form method="POST" action="/api/cart/remove">
+                      <input type="hidden" name="csrf_token" value={csrfToken} />
+                      <input type="hidden" name="productId" value={item.product_id} />
+                      <button type="submit" class="key">Remove</button>
+                    </form>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div class="mt-6">
+            <span class="lcd">
+              <span class="seg">{formatMoney(total, currency)}</span>
+              <span class="unit">TOTAL</span>
+            </span>
+          </div>
+
+          <form method="POST" action="/api/checkout" class="mt-8 flex max-w-sm flex-col gap-3">
+            <input type="hidden" name="csrf_token" value={csrfToken} />
+            <label class="flex flex-col gap-1">
+              <span class="label">Email</span>
+              <input
+                type="email"
+                name="email"
+                required
+                maxlength="320"
+                class="well"
+              />
+            </label>
+            <button type="submit" class="key self-start">Checkout — {formatMoney(total, currency)}</button>
+          </form>
+        </>
+      )}
+    </main>
+  </body>
+</html>

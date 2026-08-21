@@ -1,4 +1,5 @@
 import type { PaymentEvent } from '../payments';
+import { clearCart } from '../cart/session';
 
 const GRANT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_DOWNLOADS = 5;
@@ -7,6 +8,7 @@ interface OrderRow {
   id: string;
   email: string;
   status: string;
+  cart_id: string | null;
 }
 
 interface OrderItemRow {
@@ -51,7 +53,7 @@ export async function applyPaymentEvent(db: D1Database, event: PaymentEvent): Pr
  */
 async function markOrderPaid(db: D1Database, orderId: string): Promise<void> {
   const order = await db
-    .prepare(`SELECT id, email, status FROM orders WHERE id = ?`)
+    .prepare(`SELECT id, email, status, cart_id FROM orders WHERE id = ?`)
     .bind(orderId)
     .first<OrderRow>();
 
@@ -88,5 +90,9 @@ async function markOrderPaid(db: D1Database, orderId: string): Promise<void> {
         now,
       )
       .run();
+  }
+
+  if (order.cart_id) {
+    await clearCart(db, order.cart_id);
   }
 }

@@ -1,7 +1,11 @@
 ---
+import { env } from 'cloudflare:workers';
 import StoreHeader from '../components/StoreHeader';
 import '../styles/globals.css';
 import { PRODUCER_NAME } from '../lib/site';
+import { getCartCountFromRequest } from '../lib/cart/items';
+
+const cartCount = await getCartCountFromRequest(env.DB, Astro.request);
 ---
 
 <html lang="en">
@@ -11,7 +15,7 @@ import { PRODUCER_NAME } from '../lib/site';
     <title>About — {PRODUCER_NAME}</title>
   </head>
   <body>
-    <StoreHeader currentPath={Astro.url.pathname} />
+    <StoreHeader currentPath={Astro.url.pathname} cartCount={cartCount} />
 
     <main class="px-gutter py-16">
       <h1>About</h1>
