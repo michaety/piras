@@ -1,0 +1,85 @@
+---
+import { env } from 'cloudflare:workers';
+import '../../../../styles/globals.css';
+import { PRODUCER_NAME } from '../../../../lib/site';
+import { csrfCookie, generateCsrfToken } from '../../../../lib/admin/csrf';
+import ListingForm, { type ListingFormValues } from '../../../../components/admin/ListingForm';
+
+interface ProductRow {
+  id: string;
+  title: string;
+  type: 'beat' | 'stems' | 'sample' | 'pack';
+  description: string;
+  price_cents: number;
+  bpm: number | null;
+  musical_key: string | null;
+  duration: string | null;
+  formats: string;
+  licence: string;
+  featured: number;
+  cover_key: string | null;
+  preview_key: string | null;
+  deliverable_key: string | null;
+}
+
+const { id } = Astro.params as { id: string };
+
+const product = await env.DB.prepare(
+  `SELECT id, title, type, description, price_cents, bpm, musical_key, duration, formats, licence, featured, cover_key, preview_key, deliverable_key
+   FROM products WHERE id = ?`,
+)
+  .bind(id)
+  .first<ProductRow>();
+
+if (!product) {
+  return new Response(null, { status: 404 });
+}
+
+const initial: ListingFormValues = {
+  title: product.title,
+  type: product.type,
+  description: product.description,
+  price: (product.price_cents / 100).toFixed(2),
+  bpm: product.bpm ? String(product.bpm) : '',
+  musical_key: product.musical_key ?? '',
+  duration: product.duration ?? '',
+  formats: product.formats,
+  licence: product.licence,
+  featured: product.featured === 1,
+};
+
+function filenameFromKey(key: string | null): { filename: string } | undefined {
+  if (!key) return undefined;
+  return { filename: key.split('/').pop() ?? key };
+}
+
+const existingFiles = {
+  cover: filenameFromKey(product.cover_key),
+  preview: filenameFromKey(product.preview_key),
+  deliverable: filenameFromKey(product.deliverable_key),
+};
+
+const csrfToken = generateCsrfToken();
+Astro.response.headers.append('Set-Cookie', csrfCookie(csrfToken));
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Edit {product.title} — Admin — {PRODUCER_NAME}</title>
+  </head>
+  <body>
+    <main class="px-gutter py-12">
+      <h1>Edit listing</h1>
+      <ListingForm
+        client:load
+        csrfToken={csrfToken}
+        mode="edit"
+        listingId={product.id}
+        initial={initial}
+        existingFiles={existingFiles}
+      />
+    </main>
+  </body>
+</html>

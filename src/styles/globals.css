@@ -150,6 +150,28 @@
     background: var(--recess);
   }
 
+  /* ---- Text input: pressed-in, the inverse bevel of .key ---------------
+     Referenced by the admin listing form design but not previously
+     defined here — added to match the .key/.lcd texture logic rather
+     than reaching for a plain Tailwind border. */
+  .well {
+    background: var(--recess);
+    border: 1px solid var(--seam-light);
+    border-top-color: var(--seam-dark);
+    border-left-color: var(--seam-dark);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: var(--t-sm);
+    padding: var(--s-2) var(--s-3);
+  }
+  .well::placeholder {
+    color: var(--ink-faint);
+  }
+  .well:focus-visible {
+    outline: 2px solid var(--segment);
+    outline-offset: -1px;
+  }
+
   /* ---- Rack row: one product, one rack unit ---------------------------- */
   .rack-row {
     display: grid;

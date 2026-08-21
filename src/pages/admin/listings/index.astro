@@ -1,0 +1,77 @@
+---
+import { env } from 'cloudflare:workers';
+import '../../../styles/globals.css';
+import { PRODUCER_NAME } from '../../../lib/site';
+import { formatMoney } from '../../../lib/payments';
+import { csrfCookie, generateCsrfToken } from '../../../lib/admin/csrf';
+
+interface ProductRow {
+  id: string;
+  title: string;
+  type: string;
+  status: string;
+  price_cents: number;
+  currency: 'usd' | 'aud' | 'gbp' | 'eur';
+}
+
+const result = await env.DB.prepare(
+  `SELECT id, title, type, status, price_cents, currency FROM products ORDER BY updated_at DESC`,
+).all<ProductRow>();
+const products = result.results ?? [];
+
+const csrfToken = generateCsrfToken();
+Astro.response.headers.append('Set-Cookie', csrfCookie(csrfToken));
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Listings — Admin — {PRODUCER_NAME}</title>
+  </head>
+  <body>
+    <main class="px-gutter py-12">
+      <div class="flex items-center justify-between">
+        <h1>Listings</h1>
+        <a href="/admin/listings/new" class="key">New listing</a>
+      </div>
+
+      {products.length === 0 ? (
+        <p class="mt-8 text-ink-dim">No listings yet.</p>
+      ) : (
+        <table class="groove mt-8 w-full">
+          <thead>
+            <tr class="groove">
+              <th class="label py-2 text-left">Title</th>
+              <th class="label py-2 text-left">Type</th>
+              <th class="label py-2 text-left">Status</th>
+              <th class="label py-2 text-right">Price</th>
+              <th class="label py-2 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {products.map((product) => (
+              <tr class="groove">
+                <td class="py-2">{product.title}</td>
+                <td class="label py-2">{product.type}</td>
+                <td class="label py-2">{product.status}</td>
+                <td class="py-2 text-right">{formatMoney(product.price_cents, product.currency)}</td>
+                <td class="py-2 text-right">
+                  <div class="flex justify-end gap-2">
+                    <a href={`/admin/listings/${product.id}/edit`} class="key">Edit</a>
+                    <form method="POST" action={`/api/admin/listings/${product.id}/delete`}>
+                      <input type="hidden" name="csrf_token" value={csrfToken} />
+                      <button type="submit" class="key" disabled={product.status === 'archived'}>
+                        {product.status === 'archived' ? 'Archived' : 'Delete'}
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </main>
+  </body>
+</html>

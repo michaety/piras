@@ -1,0 +1,23 @@
+---
+import '../../../styles/globals.css';
+import { PRODUCER_NAME } from '../../../lib/site';
+import { csrfCookie, generateCsrfToken } from '../../../lib/admin/csrf';
+import ListingForm from '../../../components/admin/ListingForm';
+
+const csrfToken = generateCsrfToken();
+Astro.response.headers.append('Set-Cookie', csrfCookie(csrfToken));
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>New listing — Admin — {PRODUCER_NAME}</title>
+  </head>
+  <body>
+    <main class="px-gutter py-12">
+      <h1>New listing</h1>
+      <ListingForm client:load csrfToken={csrfToken} mode="create" />
+    </main>
+  </body>
+</html>

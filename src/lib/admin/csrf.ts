@@ -22,8 +22,17 @@ export function getCookie(request: Request, name: string): string | null {
   return null;
 }
 
-export function validateCsrf(request: Request, submittedToken: FormDataEntryValue | null): boolean {
+/**
+ * Same check for JSON request bodies (the admin listing/upload endpoints
+ * are called via fetch, not a form submission) — compares a plain string
+ * token to the CSRF cookie.
+ */
+export function validateCsrfToken(request: Request, submittedToken: unknown): boolean {
   const cookieToken = getCookie(request, CSRF_COOKIE);
   if (!cookieToken || typeof submittedToken !== 'string') return false;
   return cookieToken === submittedToken;
+}
+
+export function validateCsrf(request: Request, submittedToken: FormDataEntryValue | null): boolean {
+  return validateCsrfToken(request, submittedToken);
 }

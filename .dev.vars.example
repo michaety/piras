@@ -3,3 +3,11 @@
 ## PBKDF2 hash produced by hashPassword() in src/lib/admin/password.ts —
 ## never the plaintext password itself.
 ADMIN_PASSWORD_HASH=
+
+## R2 S3-API credentials, used only to sign presigned upload URLs
+## (src/lib/admin/r2-presign.ts). Create these under R2 > Manage R2 API
+## Tokens in the Cloudflare dashboard, scoped to the piras-public and
+## piras-private buckets only. Never commit real values.
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_ACCOUNT_ID=
