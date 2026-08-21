@@ -1,0 +1,114 @@
+---
+import { env } from 'cloudflare:workers';
+import '../../styles/globals.css';
+import { PRODUCER_NAME } from '../../lib/site';
+import { formatMoney, type Currency } from '../../lib/payments';
+import { csrfCookie, generateCsrfToken } from '../../lib/admin/csrf';
+
+interface StubSession {
+  orderId: string;
+  email: string;
+  currency: Currency;
+  amountTotal: number;
+  status: 'unpaid' | 'paid';
+  createdAt: number;
+}
+
+interface ItemRow {
+  title: string;
+  unit_price_cents: number;
+  quantity: number;
+}
+
+const sessionId = Astro.url.searchParams.get('session');
+const failed = Astro.url.searchParams.get('failed') === '1';
+
+let session: StubSession | null = null;
+let items: ItemRow[] = [];
+
+if (sessionId) {
+  const raw = await env.KV.get(`stub:session:${sessionId}`);
+  if (raw) {
+    session = JSON.parse(raw) as StubSession;
+    const result = await env.DB.prepare(
+      `SELECT p.title AS title, oi.unit_price_cents AS unit_price_cents, oi.quantity AS quantity
+       FROM order_items oi JOIN products p ON p.id = oi.product_id
+       WHERE oi.order_id = ?`,
+    )
+      .bind(session.orderId)
+      .all<ItemRow>();
+    items = result.results ?? [];
+  }
+}
+
+const csrfToken = generateCsrfToken();
+Astro.response.headers.append('Set-Cookie', csrfCookie(csrfToken));
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Checkout — {PRODUCER_NAME}</title>
+  </head>
+  <body>
+    <main class="px-gutter py-16">
+      <h1>Checkout</h1>
+      <p class="label mt-1">Stand-in for a real provider's hosted page. No payment is real.</p>
+
+      {!sessionId || !session ? (
+        <p class="mt-6 max-w-md text-ink-dim">
+          This checkout session doesn't exist or has expired. Start again from a listing.
+        </p>
+      ) : (
+        <>
+          {failed && (
+            <p class="label mt-4 text-destructive">Payment failed. Try again, or use Fail again to re-test the failure branch.</p>
+          )}
+
+          <table class="groove mt-6 w-full max-w-md">
+            <tbody>
+              {items.map((item) => (
+                <tr class="groove">
+                  <td class="py-2">
+                    {item.title}
+                    {item.quantity > 1 && ` × ${item.quantity}`}
+                  </td>
+                  <td class="py-2 text-right">
+                    {formatMoney(item.unit_price_cents * item.quantity, session.currency)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div class="mt-6 flex flex-wrap items-center gap-3">
+            <span class="lcd">
+              <span class="seg">{formatMoney(session.amountTotal, session.currency)}</span>
+              <span class="unit">TOTAL</span>
+            </span>
+            <span class="lcd">
+              <span class="seg">{session.orderId.slice(0, 8)}</span>
+              <span class="unit">ORDER</span>
+            </span>
+          </div>
+
+          <div class="mt-8 flex gap-3">
+            <form method="POST" action="/api/checkout/stub-complete">
+              <input type="hidden" name="csrf_token" value={csrfToken} />
+              <input type="hidden" name="sessionId" value={sessionId} />
+              <input type="hidden" name="outcome" value="paid" />
+              <button type="submit" class="key">Pay</button>
+            </form>
+            <form method="POST" action="/api/checkout/stub-complete">
+              <input type="hidden" name="csrf_token" value={csrfToken} />
+              <input type="hidden" name="sessionId" value={sessionId} />
+              <input type="hidden" name="outcome" value="failed" />
+              <button type="submit" class="key">Fail</button>
+            </form>
+          </div>
+        </>
+      )}
+    </main>
+  </body>
+</html>

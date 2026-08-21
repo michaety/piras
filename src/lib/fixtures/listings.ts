@@ -12,6 +12,9 @@
  *     single tempo or key. The UI must handle holes (.seg.is-off).
  *   - tracklist is optional; only packs and stems carry one.
  *   - No provider identifiers. Nothing named stripe_* belongs on a product.
+ *   - cover_url / preview_url point into piras-public. The full-quality file
+ *     is never one of these — it lives in piras-private, reachable only
+ *     through a download_grants row.
  */
 
 export type ProductType = 'beat' | 'stems' | 'sample' | 'pack';
@@ -42,6 +45,10 @@ export interface Listing {
   description: string;
   featured: boolean;
   tracklist?: Track[];
+  /** Cover art, served from piras-public. Null if none yet uploaded. */
+  cover_url: string | null;
+  /** Short preview clip, served from piras-public. Never the full file. */
+  preview_url: string | null;
 }
 
 export const listings: Listing[] = [
@@ -60,6 +67,8 @@ export const listings: Listing[] = [
     description:
       'Late, patient, and slightly detuned. Built around a decaying Rhodes loop with the low end left deliberately open for vocals.',
     featured: true,
+    cover_url: '/covers/midnight-loading.jpg',
+    preview_url: '/previews/midnight-loading.mp3',
   },
   {
     id: '2',
@@ -82,6 +91,8 @@ export const listings: Listing[] = [
       { position: 3, title: 'Room Tone A', duration: '1:04' },
       { position: 4, title: 'Bowed Bass', duration: '0:24' },
     ],
+    cover_url: '/covers/slow-burn.jpg',
+    preview_url: '/previews/slow-burn.mp3',
   },
   {
     id: '3',
@@ -98,6 +109,8 @@ export const listings: Listing[] = [
     description:
       'Hypnotic and repetitive by design. Four bars that barely change, which is the point.',
     featured: false,
+    cover_url: '/covers/ceiling-fan.jpg',
+    preview_url: '/previews/ceiling-fan.mp3',
   },
   {
     id: '4',
@@ -122,6 +135,8 @@ export const listings: Listing[] = [
       { position: 5, title: 'Pads', duration: '4:12' },
       { position: 6, title: 'Texture', duration: '4:12' },
     ],
+    cover_url: '/covers/rust-belt.jpg',
+    preview_url: '/previews/rust-belt.mp3',
   },
   {
     id: '5',
@@ -138,6 +153,8 @@ export const listings: Listing[] = [
     description:
       'A single long field recording chopped into twenty usable one-shots. Water, gravel, wind on a microphone that should have had a windshield.',
     featured: false,
+    cover_url: '/covers/coastal-access.jpg',
+    preview_url: '/previews/coastal-access.mp3',
   },
   {
     id: '6',
@@ -154,6 +171,8 @@ export const listings: Listing[] = [
     description:
       'Sparse and impatient. Mostly space, with the drums doing all the work.',
     featured: false,
+    cover_url: '/covers/nothing-doing.jpg',
+    preview_url: '/previews/nothing-doing.mp3',
   },
   {
     id: '7',
@@ -170,6 +189,8 @@ export const listings: Listing[] = [
     description:
       'Muzak turned inside out. Warm, slightly wrong, and long enough to sit in.',
     featured: false,
+    cover_url: '/covers/transit-lounge.jpg',
+    preview_url: '/previews/transit-lounge.mp3',
   },
   {
     id: '8',
@@ -186,6 +207,8 @@ export const listings: Listing[] = [
     description:
       'Drum one-shots recorded flat with no processing whatsoever. Kicks, snares, hats, and a handful of things that fell over.',
     featured: false,
+    cover_url: '/covers/dry-signal.jpg',
+    preview_url: '/previews/dry-signal.mp3',
   },
 ];
 

@@ -35,6 +35,7 @@
   --glass-edge:     #15140f;
   --segment:        #ff3b21;
   --segment-off:    #3a352c;
+  --unit-ink:       #6d6558;  /* LCD unit labels — dim, not lit */
 
   /* --- State ------------------------------------------------------------ */
   --ok:             #2f6b3d;

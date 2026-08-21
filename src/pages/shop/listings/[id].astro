@@ -30,62 +30,103 @@ const typeLabel: Record<typeof listing.type, string> = {
     <StoreHeader currentPath={Astro.url.pathname} />
 
     <main class="px-gutter py-12">
-      <span class="label">{typeLabel[listing.type]} · {listing.formats} · {listing.licence}</span>
-      <h1 class="mt-2">{listing.title}</h1>
-      <p class="mt-4 text-ink-dim">{listing.description}</p>
-
-      <div class="mt-8 flex flex-wrap gap-3">
-        <span class="lcd">
-          {listing.bpm ? (
-            <>
-              <span class="seg">{listing.bpm}</span>
-              <span class="unit">BPM</span>
-            </>
-          ) : (
-            <span class="seg text-segment-off">&mdash;</span>
-          )}
-        </span>
-        <span class="lcd">
-          <span class="seg">{listing.musical_key ?? '—'}</span>
-        </span>
-        {listing.duration && (
-          <span class="lcd">
-            <span class="seg">{listing.duration}</span>
-          </span>
+      <div class="flex flex-col gap-8 sm:flex-row">
+        {listing.cover_url && (
+          <div class="w-full max-w-xs flex-none self-start border border-glass-edge bg-recess p-2 sm:w-56">
+            <img src={listing.cover_url} alt="" width="220" height="220" class="w-full" />
+          </div>
         )}
-        <span class="lcd">
-          <span class="seg">{formatMoney(listing.price_cents, listing.currency)}</span>
-        </span>
+
+        <div class="min-w-0 flex-1">
+          <span class="label">{typeLabel[listing.type]} · {listing.formats} · {listing.licence}</span>
+          <h1 class="mt-2">{listing.title}</h1>
+          <p class="mt-4 text-ink-dim">{listing.description}</p>
+
+          <div class="mt-8 flex flex-wrap gap-3">
+            <span class="lcd">
+              {listing.bpm ? (
+                <>
+                  <span class="seg">{listing.bpm}</span>
+                  <span class="unit">BPM</span>
+                </>
+              ) : (
+                <span class="seg text-segment-off">&mdash;</span>
+              )}
+            </span>
+            <span class="lcd">
+              <span class="seg">{listing.musical_key ?? '—'}</span>
+            </span>
+            {listing.duration && (
+              <span class="lcd">
+                <span class="seg">{listing.duration}</span>
+              </span>
+            )}
+            <span class="lcd">
+              <span class="seg">{formatMoney(listing.price_cents, listing.currency)}</span>
+            </span>
+          </div>
+
+          {listing.preview_url && (
+            <div class="mt-6 flex items-center gap-3">
+              <button type="button" class="key" id="preview-toggle" data-state="paused">
+                Play preview
+              </button>
+              <audio id="preview-audio" preload="none" src={listing.preview_url}></audio>
+            </div>
+          )}
+
+          {listing.tracklist && (
+            <table class="groove mt-10 w-full max-w-xl">
+              <tbody>
+                {listing.tracklist.map((track) => (
+                  <tr class="groove">
+                    <td class="label py-2 pr-4">{String(track.position).padStart(2, '0')}</td>
+                    <td class="py-2">{track.title}</td>
+                    <td class="label py-2 pl-4 text-right">{track.duration}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          <form method="POST" action="/api/checkout" class="mt-10 flex max-w-sm flex-col gap-3">
+            <input type="hidden" name="listingId" value={listing.id} />
+            <label class="flex flex-col gap-1">
+              <span class="label">Email</span>
+              <input
+                type="email"
+                name="email"
+                required
+                maxlength="320"
+                class="border border-rule bg-inlay px-3 py-2"
+              />
+            </label>
+            <button type="submit" class="key self-start">Buy — {formatMoney(listing.price_cents, listing.currency)}</button>
+          </form>
+        </div>
       </div>
-
-      {listing.tracklist && (
-        <table class="groove mt-10 w-full max-w-xl">
-          <tbody>
-            {listing.tracklist.map((track) => (
-              <tr class="groove">
-                <td class="label py-2 pr-4">{String(track.position).padStart(2, '0')}</td>
-                <td class="py-2">{track.title}</td>
-                <td class="label py-2 pl-4 text-right">{track.duration}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-
-      <form method="POST" action="/api/checkout" class="mt-10 flex max-w-sm flex-col gap-3">
-        <input type="hidden" name="listingId" value={listing.id} />
-        <label class="flex flex-col gap-1">
-          <span class="label">Email</span>
-          <input
-            type="email"
-            name="email"
-            required
-            maxlength="320"
-            class="border border-rule bg-inlay px-3 py-2"
-          />
-        </label>
-        <button type="submit" class="key self-start">Buy — {formatMoney(listing.price_cents, listing.currency)}</button>
-      </form>
     </main>
+
+    <script>
+      const button = document.getElementById('preview-toggle');
+      const audio = document.getElementById('preview-audio');
+
+      if (button && audio instanceof HTMLAudioElement) {
+        button.addEventListener('click', () => {
+          if (audio.paused) {
+            audio.play();
+            button.textContent = 'Stop preview';
+          } else {
+            audio.pause();
+            audio.currentTime = 0;
+            button.textContent = 'Play preview';
+          }
+        });
+
+        audio.addEventListener('ended', () => {
+          button.textContent = 'Play preview';
+        });
+      }
+    </script>
   </body>
 </html>

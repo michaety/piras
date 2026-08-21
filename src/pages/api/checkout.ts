@@ -19,7 +19,24 @@ export const POST: APIRoute = async ({ request, url }) => {
     return new Response('Not found', { status: 404 });
   }
 
+  const orderId = crypto.randomUUID();
+  const now = Date.now();
+
   try {
+    // Order exists before the provider is ever called, so the fulfilment
+    // path has a 'pending' row to transition regardless of which provider
+    // completes the checkout.
+    await env.DB.batch([
+      env.DB.prepare(
+        `INSERT INTO orders (id, email, status, total_cents, currency, created_at, updated_at)
+         VALUES (?, ?, 'pending', ?, ?, ?, ?)`,
+      ).bind(orderId, email, listing.price_cents, listing.currency, now, now),
+      env.DB.prepare(
+        `INSERT INTO order_items (id, order_id, product_id, unit_price_cents, quantity)
+         VALUES (?, ?, ?, ?, 1)`,
+      ).bind(crypto.randomUUID(), orderId, listing.id, listing.price_cents),
+    ]);
+
     const provider = getPaymentProvider({
       NAMESPACE: env.KV,
       ENVIRONMENT: env.ENVIRONMENT,
@@ -37,7 +54,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       ],
       currency: listing.currency,
       email,
-      orderId: crypto.randomUUID(),
+      orderId,
       successUrl: new URL('/success', url).toString(),
       cancelUrl: new URL(`/shop/listings/${listing.id}`, url).toString(),
     });

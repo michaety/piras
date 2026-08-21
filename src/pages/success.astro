@@ -1,9 +1,30 @@
 ---
+import { env } from 'cloudflare:workers';
 import StoreHeader from '../components/StoreHeader';
 import '../styles/globals.css';
 import { PRODUCER_NAME } from '../lib/site';
 
-const sessionId = Astro.url.searchParams.get('session');
+interface GrantRow {
+  token: string;
+  product_title: string;
+}
+
+const orderId = Astro.url.searchParams.get('order');
+const legacySessionId = Astro.url.searchParams.get('session');
+
+let grants: GrantRow[] = [];
+
+if (orderId) {
+  const result = await env.DB.prepare(
+    `SELECT g.token AS token, p.title AS product_title
+     FROM download_grants g
+     JOIN products p ON p.id = g.product_id
+     WHERE g.order_id = ?`,
+  )
+    .bind(orderId)
+    .all<GrantRow>();
+  grants = result.results ?? [];
+}
 ---
 
 <html lang="en">
@@ -17,11 +38,26 @@ const sessionId = Astro.url.searchParams.get('session');
 
     <main class="px-gutter py-16">
       <h1>Thanks.</h1>
-      <p class="mt-4 max-w-md text-ink-dim">
-        Payments aren't live yet, so this is a placeholder confirmation. Once
-        checkout is wired up, your download link will appear here.
-      </p>
-      {sessionId && <p class="label mt-6">Session: {sessionId}</p>}
+
+      {orderId && grants.length > 0 ? (
+        <>
+          <p class="mt-4 max-w-md text-ink-dim">Your downloads:</p>
+          <ul class="groove mt-4 max-w-md">
+            {grants.map((grant) => (
+              <li class="groove flex items-center justify-between py-2">
+                <span>{grant.product_title}</span>
+                <a href={`/api/download/${grant.token}`} class="key">Download</a>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : (
+        <p class="mt-4 max-w-md text-ink-dim">
+          Payments aren't fully live yet, so this is a placeholder confirmation.
+        </p>
+      )}
+
+      {legacySessionId && <p class="label mt-6">Session: {legacySessionId}</p>}
     </main>
   </body>
 </html>
