@@ -1,0 +1,22 @@
+# build output
+dist/
+# generated types
+.astro/
+
+# dependencies
+node_modules/
+
+# Cloudflare
+.wrangler/
+
+# environment variables
+.env
+.env.production
+.dev.vars
+.dev.vars.*
+
+# macOS-specific files
+.DS_Store
+
+# jetbrains setting folder
+.idea/
