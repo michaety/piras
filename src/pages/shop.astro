@@ -3,9 +3,11 @@ import { env } from 'cloudflare:workers';
 import StoreHeader from '../components/StoreHeader';
 import RackRow from '../components/RackRow.astro';
 import '../styles/globals.css';
-import { PRODUCER_NAME } from '../lib/site';
+import { PRODUCER_NAME, isCommerceEnabled } from '../lib/site';
 import { listPublished, type ProductType } from '../lib/products/queries';
 import { getCartCountFromRequest } from '../lib/cart/items';
+
+const commerceEnabled = isCommerceEnabled(env.COMMERCE_ENABLED);
 
 const FILTERS: Array<{ label: string; type: ProductType | null }> = [
   { label: 'All', type: null },
@@ -26,17 +28,24 @@ const activeType =
 // already-fetched list — a draft/archived row is never in this result
 // set to begin with, filter or no filter.
 const listings = await listPublished(env.DB, activeType ? { type: activeType } : {});
-const cartCount = await getCartCountFromRequest(env.DB, Astro.request);
+const cartCount = commerceEnabled ? await getCartCountFromRequest(env.DB, Astro.request) : 0;
+
+const pageTitle = commerceEnabled ? 'Shop' : 'Work';
+const emptyMessage = activeType
+  ? 'Nothing matches this filter.'
+  : commerceEnabled
+    ? 'Nothing in the shop yet — check back soon.'
+    : 'Nothing published yet — check back soon.';
 ---
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
-    <title>Shop — {PRODUCER_NAME}</title>
+    <title>{pageTitle} — {PRODUCER_NAME}</title>
   </head>
   <body>
-    <StoreHeader currentPath={Astro.url.pathname} cartCount={cartCount} />
+    <StoreHeader currentPath={Astro.url.pathname} commerceEnabled={commerceEnabled} cartCount={cartCount} />
 
     <main>
       <div class="groove flex flex-wrap gap-2 px-gutter py-4">
@@ -52,11 +61,11 @@ const cartCount = await getCartCountFromRequest(env.DB, Astro.request);
       </div>
 
       {listings.length === 0 ? (
-        <p class="label px-gutter py-8">
-          {activeType ? 'No listings match this filter.' : 'Nothing in the shop yet — check back soon.'}
-        </p>
+        <p class="label px-gutter py-8">{emptyMessage}</p>
       ) : (
-        listings.map((listing, index) => <RackRow listing={listing} index={index} />)
+        listings.map((listing, index) => (
+          <RackRow listing={listing} index={index} commerceEnabled={commerceEnabled} />
+        ))
       )}
     </main>
   </body>

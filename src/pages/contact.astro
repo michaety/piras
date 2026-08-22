@@ -2,11 +2,26 @@
 import { env } from 'cloudflare:workers';
 import StoreHeader from '../components/StoreHeader';
 import '../styles/globals.css';
-import { PRODUCER_NAME, SOCIALS } from '../lib/site';
+import { PRODUCER_NAME, SOCIALS, isCommerceEnabled } from '../lib/site';
 import { getCartCountFromRequest } from '../lib/cart/items';
+import { getPublishedBySlug } from '../lib/products/queries';
 
+const commerceEnabled = isCommerceEnabled(env.COMMERCE_ENABLED);
 const socials = SOCIALS.filter((s) => s.url);
-const cartCount = await getCartCountFromRequest(env.DB, Astro.request);
+const cartCount = commerceEnabled ? await getCartCountFromRequest(env.DB, Astro.request) : 0;
+
+// "Enquire about this track" on a detail page links here with ?ref=slug.
+// There's no separate subject field in the schema (contact_submissions
+// has no subject column), so the reference is folded into the message
+// body's starting text instead of a hidden field the backend ignores.
+const refSlug = Astro.url.searchParams.get('ref');
+let messagePrefill = '';
+if (refSlug) {
+  const product = await getPublishedBySlug(env.DB, refSlug);
+  if (product) {
+    messagePrefill = `Enquiring about "${product.title}": `;
+  }
+}
 ---
 
 <html lang="en">
@@ -16,7 +31,7 @@ const cartCount = await getCartCountFromRequest(env.DB, Astro.request);
     <title>Contact — {PRODUCER_NAME}</title>
   </head>
   <body>
-    <StoreHeader currentPath={Astro.url.pathname} cartCount={cartCount} />
+    <StoreHeader currentPath={Astro.url.pathname} commerceEnabled={commerceEnabled} cartCount={cartCount} />
 
     <main class="px-gutter py-12">
       <h1>Contact</h1>
@@ -34,7 +49,7 @@ const cartCount = await getCartCountFromRequest(env.DB, Astro.request);
 
         <label class="flex flex-col gap-1">
           <span class="label">Message</span>
-          <textarea name="message" required maxlength="4000" rows="6" class="border border-rule bg-inlay px-3 py-2"></textarea>
+          <textarea name="message" required maxlength="4000" rows="6" class="border border-rule bg-inlay px-3 py-2">{messagePrefill}</textarea>
         </label>
 
         <button type="submit" class="key self-start">Send</button>

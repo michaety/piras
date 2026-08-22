@@ -3,12 +3,18 @@ import { env } from 'cloudflare:workers';
 import StoreHeader from '../components/StoreHeader';
 import RackRow from '../components/RackRow.astro';
 import '../styles/globals.css';
-import { PRODUCER_NAME, SITE_DESCRIPTION } from '../lib/site';
-import { listFeatured } from '../lib/products/queries';
+import { PRODUCER_NAME, SITE_DESCRIPTION, SOCIALS, isCommerceEnabled } from '../lib/site';
+import { listFeatured, listPublished } from '../lib/products/queries';
 import { getCartCountFromRequest } from '../lib/cart/items';
 
+const commerceEnabled = isCommerceEnabled(env.COMMERCE_ENABLED);
+const cartCount = commerceEnabled ? await getCartCountFromRequest(env.DB, Astro.request) : 0;
+
 const featured = await listFeatured(env.DB);
-const cartCount = await getCartCountFromRequest(env.DB, Astro.request);
+const catalogue = await listPublished(env.DB);
+const trackCount = String(catalogue.length).padStart(2, '0');
+
+const socials = SOCIALS.filter((s) => s.url);
 ---
 
 <html lang="en">
@@ -19,21 +25,60 @@ const cartCount = await getCartCountFromRequest(env.DB, Astro.request);
     <title>{PRODUCER_NAME}</title>
   </head>
   <body>
-    <StoreHeader currentPath={Astro.url.pathname} cartCount={cartCount} />
+    <StoreHeader currentPath={Astro.url.pathname} commerceEnabled={commerceEnabled} cartCount={cartCount} />
 
     <main>
       <section class="px-gutter py-16">
         <h1 class="max-w-2xl">{PRODUCER_NAME}</h1>
         <p class="mt-4 label normal-case text-ink-dim">{SITE_DESCRIPTION}</p>
-        <a href="/shop" class="key mt-8 inline-block">Browse the shop</a>
+
+        <div class="lcd mt-8 inline-flex">
+          <span class="seg text-2xl" id="hero-seg" data-final={trackCount}>{trackCount}</span>
+          <span class="unit">TRACKS</span>
+        </div>
+
+        <div class="mt-8 flex flex-wrap items-center gap-4">
+          <a href="/shop" class="key">{commerceEnabled ? 'Browse the shop' : 'Hear the work'}</a>
+          <a href="/contact" class="label underline">Get in touch</a>
+        </div>
+
+        {socials.length > 0 && (
+          <div class="mt-8 flex gap-4">
+            {socials.map((s) => (
+              <a href={s.url} class="label" rel="noreferrer">{s.label}</a>
+            ))}
+          </div>
+        )}
       </section>
 
       {featured.length > 0 && (
         <section>
           <h2 class="label px-gutter py-2">Featured</h2>
-          {featured.map((listing, index) => <RackRow listing={listing} index={index} />)}
+          {featured.map((listing, index) => (
+            <RackRow listing={listing} index={index} commerceEnabled={commerceEnabled} />
+          ))}
         </section>
       )}
     </main>
+
+    <script>
+      // The page-load segment self-test: a real LCD briefly lights every
+      // segment on power-on before settling into its actual reading. This
+      // is the only motion on the page besides the row hover arrow.
+      const seg = document.getElementById('hero-seg');
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (seg instanceof HTMLElement) {
+        const final = seg.dataset.final ?? seg.textContent ?? '';
+        if (prefersReducedMotion) {
+          seg.textContent = final;
+        } else {
+          seg.textContent = '8'.repeat(final.length);
+          setTimeout(() => {
+            seg.textContent = final;
+          }, 450);
+        }
+      }
+    </script>
   </body>
 </html>

@@ -48,6 +48,12 @@ Astro.response.headers.append('Set-Cookie', csrfCookie(csrfToken));
                 <td class="py-2 text-right">
                   <div class="flex justify-end gap-2">
                     <a href={`/admin/listings/${product.id}/edit`} class="key">Edit</a>
+                    {product.status === 'published' && (
+                      <form method="POST" action={`/api/admin/listings/${product.id}/unpublish`}>
+                        <input type="hidden" name="csrf_token" value={csrfToken} />
+                        <button type="submit" class="key">Unpublish</button>
+                      </form>
+                    )}
                     <form method="POST" action={`/api/admin/listings/${product.id}/delete`}>
                       <input type="hidden" name="csrf_token" value={csrfToken} />
                       <button type="submit" class="key" disabled={product.status === 'archived'}>

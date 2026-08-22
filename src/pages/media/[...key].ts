@@ -4,17 +4,31 @@ import { env } from 'cloudflare:workers';
 export const prerender = false;
 
 /**
- * Serves objects out of piras-public only — cover art and preview audio,
- * which are meant to be publicly reachable by design (see
- * migrations/0001_init.sql). This is not the same category of route as
- * /api/download/[token]: there is nothing to gate here, and this handler
- * never touches PRIVATE_BUCKET. The key comes straight from the URL
- * because that's exactly what a public asset route is — the private
- * bucket's key still only ever comes from a download_grants lookup.
+ * Serves objects out of piras-public — but only ones D1 actually
+ * references as a cover_key or preview_key on some product. The key
+ * still arrives in the URL (a public asset route has to work that way),
+ * but it's never trusted on its own: it's looked up first, and only
+ * served if it matches a row. That makes "an R2 key always comes from
+ * the database" hold with no exception to remember, instead of resting
+ * on "well, PUBLIC_BUCKET has nothing sensitive in it anyway."
+ *
+ * Still a different category of route from /api/download/[token]: this
+ * only ever touches PUBLIC_BUCKET, and the private bucket's key still
+ * only ever comes from a download_grants lookup.
  */
 export const GET: APIRoute = async ({ params }) => {
   const key = params.key;
   if (typeof key !== 'string' || key.length === 0) {
+    return new Response('Not found', { status: 404 });
+  }
+
+  const match = await env.DB.prepare(
+    `SELECT 1 FROM products WHERE cover_key = ?1 OR preview_key = ?1 LIMIT 1`,
+  )
+    .bind(key)
+    .first();
+
+  if (!match) {
     return new Response('Not found', { status: 404 });
   }
 

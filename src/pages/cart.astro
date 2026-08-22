@@ -2,12 +2,15 @@
 import { env } from 'cloudflare:workers';
 import StoreHeader from '../components/StoreHeader';
 import '../styles/globals.css';
-import { PRODUCER_NAME } from '../lib/site';
+import { PRODUCER_NAME, isCommerceEnabled } from '../lib/site';
 import { formatMoney } from '../lib/payments';
 import { getCartId } from '../lib/cart/session';
 import { getCartItems } from '../lib/cart/items';
 import { csrfCookie, generateCsrfToken } from '../lib/admin/csrf';
 
+// This page is gated by middleware when commerce is off — reachable at
+// all here means it's on.
+const commerceEnabled = isCommerceEnabled(env.COMMERCE_ENABLED);
 const cartId = getCartId(Astro.request);
 const items = cartId ? await getCartItems(env.DB, cartId) : [];
 const cartCount = items.length;
@@ -28,7 +31,7 @@ Astro.response.headers.append('Set-Cookie', csrfCookie(csrfToken));
     <title>Cart — {PRODUCER_NAME}</title>
   </head>
   <body>
-    <StoreHeader currentPath={Astro.url.pathname} cartCount={cartCount} />
+    <StoreHeader currentPath={Astro.url.pathname} commerceEnabled={commerceEnabled} cartCount={cartCount} />
 
     <main class="px-gutter py-12">
       <h1>Cart</h1>

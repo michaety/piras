@@ -5,9 +5,10 @@ import { formatMoney } from '../lib/payments';
 interface Props {
   listing: Product;
   index: number;
+  commerceEnabled: boolean;
 }
 
-const { listing, index } = Astro.props;
+const { listing, index, commerceEnabled } = Astro.props;
 
 const typeLabel: Record<Product['type'], string> = {
   beat: 'Beat',
@@ -38,9 +39,17 @@ const typeLabel: Record<Product['type'], string> = {
 
   <span class="label [grid-area:meta]">{listing.musicalKey ?? '—'}</span>
 
-  <span class="lcd [grid-area:price]">
-    <span class="seg">{formatMoney(listing.priceCents, listing.currency)}</span>
-  </span>
+  {commerceEnabled ? (
+    <span class="lcd [grid-area:price]">
+      <span class="seg">{formatMoney(listing.priceCents, listing.currency)}</span>
+    </span>
+  ) : (
+    listing.duration && (
+      <span class="lcd [grid-area:price]">
+        <span class="seg">{listing.duration}</span>
+      </span>
+    )
+  )}
 
   <span class="arrow max-[900px]:hidden font-mono text-ink-dim group-hover:text-ink">&rarr;</span>
 </a>

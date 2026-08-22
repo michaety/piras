@@ -2,7 +2,7 @@
 import { env } from 'cloudflare:workers';
 import StoreHeader from '../../../components/StoreHeader';
 import '../../../styles/globals.css';
-import { PRODUCER_NAME } from '../../../lib/site';
+import { PRODUCER_NAME, isCommerceEnabled } from '../../../lib/site';
 import { getPublishedBySlug, getTracks } from '../../../lib/products/queries';
 import { formatMoney } from '../../../lib/payments';
 import { getCartCountFromRequest } from '../../../lib/cart/items';
@@ -28,9 +28,16 @@ const typeLabel: Record<typeof listing.type, string> = {
   pack: 'Pack',
 };
 
-const cartCount = await getCartCountFromRequest(env.DB, Astro.request);
-const csrfToken = generateCsrfToken();
-Astro.response.headers.append('Set-Cookie', csrfCookie(csrfToken));
+const commerceEnabled = isCommerceEnabled(env.COMMERCE_ENABLED);
+const cartCount = commerceEnabled ? await getCartCountFromRequest(env.DB, Astro.request) : 0;
+
+// The CSRF cookie only needs to exist for the add-to-cart form, which
+// only renders when commerce is on.
+let csrfToken = '';
+if (commerceEnabled) {
+  csrfToken = generateCsrfToken();
+  Astro.response.headers.append('Set-Cookie', csrfCookie(csrfToken));
+}
 ---
 
 <html lang="en">
@@ -40,7 +47,7 @@ Astro.response.headers.append('Set-Cookie', csrfCookie(csrfToken));
     <title>{listing.title} — {PRODUCER_NAME}</title>
   </head>
   <body>
-    <StoreHeader currentPath={Astro.url.pathname} cartCount={cartCount} />
+    <StoreHeader currentPath={Astro.url.pathname} commerceEnabled={commerceEnabled} cartCount={cartCount} />
 
     <main class="px-gutter py-12">
       <div class="flex flex-col gap-8 sm:flex-row">
@@ -74,9 +81,11 @@ Astro.response.headers.append('Set-Cookie', csrfCookie(csrfToken));
                 <span class="seg">{listing.duration}</span>
               </span>
             )}
-            <span class="lcd">
-              <span class="seg">{formatMoney(listing.priceCents, listing.currency)}</span>
-            </span>
+            {commerceEnabled && (
+              <span class="lcd">
+                <span class="seg">{formatMoney(listing.priceCents, listing.currency)}</span>
+              </span>
+            )}
           </div>
 
           {listing.previewKey && (
@@ -102,13 +111,19 @@ Astro.response.headers.append('Set-Cookie', csrfCookie(csrfToken));
             </table>
           )}
 
-          <form method="POST" action="/api/cart/add" class="mt-10">
-            <input type="hidden" name="csrf_token" value={csrfToken} />
-            <input type="hidden" name="productId" value={listing.id} />
-            <button type="submit" class="key self-start">
-              Add to cart — {formatMoney(listing.priceCents, listing.currency)}
-            </button>
-          </form>
+          {commerceEnabled ? (
+            <form method="POST" action="/api/cart/add" class="mt-10">
+              <input type="hidden" name="csrf_token" value={csrfToken} />
+              <input type="hidden" name="productId" value={listing.id} />
+              <button type="submit" class="key self-start">
+                Add to cart — {formatMoney(listing.priceCents, listing.currency)}
+              </button>
+            </form>
+          ) : (
+            <a href={`/contact?ref=${listing.slug}`} class="key mt-10 inline-block">
+              Enquire about this track
+            </a>
+          )}
         </div>
       </div>
     </main>

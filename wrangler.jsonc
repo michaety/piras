@@ -12,7 +12,8 @@
     "crons": ["0 3 * * *"]
   },
   "vars": {
-    "ENVIRONMENT": "development"
+    "ENVIRONMENT": "development",
+    "COMMERCE_ENABLED": "false"
   },
   "d1_databases": [
     {

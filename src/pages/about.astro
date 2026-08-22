@@ -2,10 +2,11 @@
 import { env } from 'cloudflare:workers';
 import StoreHeader from '../components/StoreHeader';
 import '../styles/globals.css';
-import { PRODUCER_NAME } from '../lib/site';
+import { PRODUCER_NAME, isCommerceEnabled } from '../lib/site';
 import { getCartCountFromRequest } from '../lib/cart/items';
 
-const cartCount = await getCartCountFromRequest(env.DB, Astro.request);
+const commerceEnabled = isCommerceEnabled(env.COMMERCE_ENABLED);
+const cartCount = commerceEnabled ? await getCartCountFromRequest(env.DB, Astro.request) : 0;
 ---
 
 <html lang="en">
@@ -15,7 +16,7 @@ const cartCount = await getCartCountFromRequest(env.DB, Astro.request);
     <title>About — {PRODUCER_NAME}</title>
   </head>
   <body>
-    <StoreHeader currentPath={Astro.url.pathname} cartCount={cartCount} />
+    <StoreHeader currentPath={Astro.url.pathname} commerceEnabled={commerceEnabled} cartCount={cartCount} />
 
     <main class="px-gutter py-16">
       <h1>About</h1>

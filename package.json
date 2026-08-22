@@ -10,7 +10,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "seed:dev": "wrangler d1 execute piras-db --local --file=scripts/seed-dev.sql"
+    "seed:dev": "wrangler d1 execute piras-db --local --file=scripts/seed-dev.sql",
+    "deploy": "astro build && wrangler deploy"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.2.3",
