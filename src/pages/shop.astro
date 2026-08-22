@@ -4,10 +4,8 @@ import StoreHeader from '../components/StoreHeader';
 import RackRow from '../components/RackRow.astro';
 import '../styles/globals.css';
 import { PRODUCER_NAME } from '../lib/site';
-import { listings, type ProductType } from '../lib/fixtures/listings';
+import { listPublished, type ProductType } from '../lib/products/queries';
 import { getCartCountFromRequest } from '../lib/cart/items';
-
-const cartCount = await getCartCountFromRequest(env.DB, Astro.request);
 
 const FILTERS: Array<{ label: string; type: ProductType | null }> = [
   { label: 'All', type: null },
@@ -17,8 +15,18 @@ const FILTERS: Array<{ label: string; type: ProductType | null }> = [
   { label: 'Packs', type: 'pack' },
 ];
 
-const activeType = Astro.url.searchParams.get('type') as ProductType | null;
-const filtered = activeType ? listings.filter((l) => l.type === activeType) : listings;
+const VALID_TYPES: readonly ProductType[] = ['beat', 'stems', 'sample', 'pack'];
+const requestedType = Astro.url.searchParams.get('type');
+const activeType =
+  requestedType && (VALID_TYPES as readonly string[]).includes(requestedType)
+    ? (requestedType as ProductType)
+    : null;
+
+// The filter is applied in the query itself, not by filtering an
+// already-fetched list — a draft/archived row is never in this result
+// set to begin with, filter or no filter.
+const listings = await listPublished(env.DB, activeType ? { type: activeType } : {});
+const cartCount = await getCartCountFromRequest(env.DB, Astro.request);
 ---
 
 <html lang="en">
@@ -43,10 +51,12 @@ const filtered = activeType ? listings.filter((l) => l.type === activeType) : li
         ))}
       </div>
 
-      {filtered.length === 0 ? (
-        <p class="label px-gutter py-8">No listings match this filter.</p>
+      {listings.length === 0 ? (
+        <p class="label px-gutter py-8">
+          {activeType ? 'No listings match this filter.' : 'Nothing in the shop yet — check back soon.'}
+        </p>
       ) : (
-        filtered.map((listing, index) => <RackRow listing={listing} index={index} />)
+        listings.map((listing, index) => <RackRow listing={listing} index={index} />)
       )}
     </main>
   </body>

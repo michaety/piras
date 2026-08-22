@@ -1,5 +1,5 @@
 import { useState, type SyntheticEvent } from 'react';
-import type { ProductType } from '../../lib/fixtures/listings';
+import type { ProductType } from '../../lib/products/queries';
 import { UPLOAD_RULES, type UploadKind } from '../../lib/admin/upload-rules';
 
 interface UploadUrlResponse {

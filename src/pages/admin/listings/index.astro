@@ -4,20 +4,9 @@ import '../../../styles/globals.css';
 import { PRODUCER_NAME } from '../../../lib/site';
 import { formatMoney } from '../../../lib/payments';
 import { csrfCookie, generateCsrfToken } from '../../../lib/admin/csrf';
+import { listAll } from '../../../lib/products/queries';
 
-interface ProductRow {
-  id: string;
-  title: string;
-  type: string;
-  status: string;
-  price_cents: number;
-  currency: 'usd' | 'aud' | 'gbp' | 'eur';
-}
-
-const result = await env.DB.prepare(
-  `SELECT id, title, type, status, price_cents, currency FROM products ORDER BY updated_at DESC`,
-).all<ProductRow>();
-const products = result.results ?? [];
+const products = await listAll(env.DB);
 
 const csrfToken = generateCsrfToken();
 Astro.response.headers.append('Set-Cookie', csrfCookie(csrfToken));
@@ -55,7 +44,7 @@ Astro.response.headers.append('Set-Cookie', csrfCookie(csrfToken));
                 <td class="py-2">{product.title}</td>
                 <td class="label py-2">{product.type}</td>
                 <td class="label py-2">{product.status}</td>
-                <td class="py-2 text-right">{formatMoney(product.price_cents, product.currency)}</td>
+                <td class="py-2 text-right">{formatMoney(product.priceCents, product.currency)}</td>
                 <td class="py-2 text-right">
                   <div class="flex justify-end gap-2">
                     <a href={`/admin/listings/${product.id}/edit`} class="key">Edit</a>

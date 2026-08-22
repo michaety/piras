@@ -4,32 +4,11 @@ import '../../../../styles/globals.css';
 import { PRODUCER_NAME } from '../../../../lib/site';
 import { csrfCookie, generateCsrfToken } from '../../../../lib/admin/csrf';
 import ListingForm, { type ListingFormValues } from '../../../../components/admin/ListingForm';
-
-interface ProductRow {
-  id: string;
-  title: string;
-  type: 'beat' | 'stems' | 'sample' | 'pack';
-  description: string;
-  price_cents: number;
-  bpm: number | null;
-  musical_key: string | null;
-  duration: string | null;
-  formats: string;
-  licence: string;
-  featured: number;
-  cover_key: string | null;
-  preview_key: string | null;
-  deliverable_key: string | null;
-}
+import { getById } from '../../../../lib/products/queries';
 
 const { id } = Astro.params as { id: string };
 
-const product = await env.DB.prepare(
-  `SELECT id, title, type, description, price_cents, bpm, musical_key, duration, formats, licence, featured, cover_key, preview_key, deliverable_key
-   FROM products WHERE id = ?`,
-)
-  .bind(id)
-  .first<ProductRow>();
+const product = await getById(env.DB, id);
 
 if (!product) {
   return new Response(null, { status: 404 });
@@ -39,13 +18,13 @@ const initial: ListingFormValues = {
   title: product.title,
   type: product.type,
   description: product.description,
-  price: (product.price_cents / 100).toFixed(2),
+  price: (product.priceCents / 100).toFixed(2),
   bpm: product.bpm ? String(product.bpm) : '',
-  musical_key: product.musical_key ?? '',
+  musical_key: product.musicalKey ?? '',
   duration: product.duration ?? '',
   formats: product.formats,
   licence: product.licence,
-  featured: product.featured === 1,
+  featured: product.featured,
 };
 
 function filenameFromKey(key: string | null): { filename: string } | undefined {
@@ -54,9 +33,9 @@ function filenameFromKey(key: string | null): { filename: string } | undefined {
 }
 
 const existingFiles = {
-  cover: filenameFromKey(product.cover_key),
-  preview: filenameFromKey(product.preview_key),
-  deliverable: filenameFromKey(product.deliverable_key),
+  cover: filenameFromKey(product.coverKey),
+  preview: filenameFromKey(product.previewKey),
+  deliverable: filenameFromKey(product.deliverableKey),
 };
 
 const csrfToken = generateCsrfToken();

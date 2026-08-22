@@ -4,10 +4,10 @@ import StoreHeader from '../components/StoreHeader';
 import RackRow from '../components/RackRow.astro';
 import '../styles/globals.css';
 import { PRODUCER_NAME, SITE_DESCRIPTION } from '../lib/site';
-import { getFeatured } from '../lib/fixtures/listings';
+import { listFeatured } from '../lib/products/queries';
 import { getCartCountFromRequest } from '../lib/cart/items';
 
-const featured = getFeatured();
+const featured = await listFeatured(env.DB);
 const cartCount = await getCartCountFromRequest(env.DB, Astro.request);
 ---
 

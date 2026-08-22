@@ -3,17 +3,23 @@ import { env } from 'cloudflare:workers';
 import StoreHeader from '../../../components/StoreHeader';
 import '../../../styles/globals.css';
 import { PRODUCER_NAME } from '../../../lib/site';
-import { listings } from '../../../lib/fixtures/listings';
+import { getPublishedBySlug, getTracks } from '../../../lib/products/queries';
 import { formatMoney } from '../../../lib/payments';
 import { getCartCountFromRequest } from '../../../lib/cart/items';
 import { csrfCookie, generateCsrfToken } from '../../../lib/admin/csrf';
 
-const { id } = Astro.params as { id: string };
-const listing = listings.find((l) => l.id === id);
+const { slug } = Astro.params as { slug: string };
+
+// status = 'published' is enforced inside getPublishedBySlug's query, not
+// checked here after the fact — a draft or archived row is never
+// returned, so there's no "found but hidden" branch to get wrong.
+const listing = await getPublishedBySlug(env.DB, slug);
 
 if (!listing) {
   return new Response(null, { status: 404 });
 }
+
+const tracks = await getTracks(env.DB, listing.id);
 
 const typeLabel: Record<typeof listing.type, string> = {
   beat: 'Beat',
@@ -38,9 +44,9 @@ Astro.response.headers.append('Set-Cookie', csrfCookie(csrfToken));
 
     <main class="px-gutter py-12">
       <div class="flex flex-col gap-8 sm:flex-row">
-        {listing.cover_url && (
+        {listing.coverKey && (
           <div class="w-full max-w-xs flex-none self-start border border-glass-edge bg-recess p-2 sm:w-56">
-            <img src={listing.cover_url} alt="" width="220" height="220" class="w-full" />
+            <img src={`/media/${listing.coverKey}`} alt="" width="220" height="220" class="w-full" />
           </div>
         )}
 
@@ -61,7 +67,7 @@ Astro.response.headers.append('Set-Cookie', csrfCookie(csrfToken));
               )}
             </span>
             <span class="lcd">
-              <span class="seg">{listing.musical_key ?? '—'}</span>
+              <span class="seg">{listing.musicalKey ?? '—'}</span>
             </span>
             {listing.duration && (
               <span class="lcd">
@@ -69,23 +75,23 @@ Astro.response.headers.append('Set-Cookie', csrfCookie(csrfToken));
               </span>
             )}
             <span class="lcd">
-              <span class="seg">{formatMoney(listing.price_cents, listing.currency)}</span>
+              <span class="seg">{formatMoney(listing.priceCents, listing.currency)}</span>
             </span>
           </div>
 
-          {listing.preview_url && (
+          {listing.previewKey && (
             <div class="mt-6 flex items-center gap-3">
               <button type="button" class="key" id="preview-toggle" data-state="paused">
                 Play preview
               </button>
-              <audio id="preview-audio" preload="none" src={listing.preview_url}></audio>
+              <audio id="preview-audio" preload="none" src={`/media/${listing.previewKey}`}></audio>
             </div>
           )}
 
-          {listing.tracklist && (
+          {tracks.length > 0 && (
             <table class="groove mt-10 w-full max-w-xl">
               <tbody>
-                {listing.tracklist.map((track) => (
+                {tracks.map((track) => (
                   <tr class="groove">
                     <td class="label py-2 pr-4">{String(track.position).padStart(2, '0')}</td>
                     <td class="py-2">{track.title}</td>
@@ -100,7 +106,7 @@ Astro.response.headers.append('Set-Cookie', csrfCookie(csrfToken));
             <input type="hidden" name="csrf_token" value={csrfToken} />
             <input type="hidden" name="productId" value={listing.id} />
             <button type="submit" class="key self-start">
-              Add to cart — {formatMoney(listing.price_cents, listing.currency)}
+              Add to cart — {formatMoney(listing.priceCents, listing.currency)}
             </button>
           </form>
         </div>

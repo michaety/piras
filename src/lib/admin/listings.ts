@@ -1,4 +1,4 @@
-import type { ProductType } from '../fixtures/listings';
+import type { ProductType } from '../products/queries';
 
 const PRODUCT_TYPES: readonly ProductType[] = ['beat', 'stems', 'sample', 'pack'];
 

@@ -1,3 +1,14 @@
+-- NUMBERING NOTE: 0003 and 0006 existed and have been deleted — they
+-- inserted seed/demo content, which migrations must never do (content
+-- belongs in scripts/seed-dev.sql, applied with `npm run seed:dev`,
+-- never to remote). Left as a gap rather than renumbered: this repo's
+-- local D1 already had 0001-0006 recorded as applied by filename, and
+-- renaming 0004/0005 to fill the gap would have made wrangler try to
+-- re-run their (already-applied) schema changes under new names. Local
+-- D1 state was reset and migrations 0001, 0002, 0004, 0005 reapplied
+-- clean to confirm the surviving migrations are content-free on their
+-- own.
+--
 -- Admin-managed listing lifecycle: draft -> published -> archived, and the
 -- direct-to-R2 upload bookkeeping that makes uploading a 2GB deliverable
 -- through the Worker unnecessary (Cloudflare's request body limit is
